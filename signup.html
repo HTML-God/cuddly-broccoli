@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="shortcut icon" href="Vexora_v1-removebg-preview.png" type="image/x-icon" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vexora - Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Firebase Signup with Firestore -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+      } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc
+      } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+      // Firebase config
+      const firebaseConfig = {
+        apiKey: "AIzaSyAZFCHlYN1pxtgiL_awMCfTFgVrx84fBuY",
+        authDomain: "vexora-68fb7.firebaseapp.com",
+        projectId: "vexora-68fb7",
+        storageBucket: "vexora-68fb7.appspot.com",
+        messagingSenderId: "756975037451",
+        appId: "1:756975037451:web:04fbaca4f080c6fe3beb0e",
+        measurementId: "G-391LRTHN5Q",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      // Friendly error messages mapping
+      const errorMessages = {
+        "auth/email-already-in-use": "This email is already registered.",
+        "auth/invalid-email": "The email address is badly formatted.",
+        "auth/weak-password": "Password should be at least 6 characters.",
+      };
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector("#signup-form");
+        const errorBox = document.getElementById("error-message");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          // Clear error
+          errorBox.classList.add("hidden");
+          errorBox.textContent = "";
+
+          const email = form.email.value.trim();
+          const password = form.password.value;
+
+          try {
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Save additional user data in Firestore
+            await setDoc(doc(db, "users", user.uid), {
+              email: email,
+              createdAt: new Date().toISOString(),
+              status: "active"
+            });
+
+            alert("Registration successful!");
+            window.location.href = "login.html"; // Redirect to login
+          } catch (error) {
+            console.error(error);
+            const code = error.code || "";
+            errorBox.textContent = errorMessages[code] || "An error occurred. Please try again.";
+            errorBox.classList.remove("hidden");
+          }
+        });
+      });
+    </script>
+  </head>
+
+  <body class="bg-gray-900">
+    <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+      <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+        <h2 class="mt-10 text-center text-2xl font-bold tracking-tight text-white">
+          Register an account
+        </h2>
+      </div>
+
+      <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form id="signup-form" class="space-y-6" method="POST" action="#">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-100">
+              Email address
+            </label>
+            <div class="mt-2">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-100">
+              Password
+            </label>
+            <div class="mt-2">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autocomplete="new-password"
+                class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              class="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            >
+              Register
+            </button>
+          </div>
+
+          <!-- Error message box -->
+          <div
+            id="error-message"
+            class="hidden mt-2 rounded-md bg-red-600 px-3 py-2 text-sm text-white"
+          ></div>
+        </form>
+
+        <p class="mt-4 text-center text-sm text-gray-400">
+          Already a member?
+          <a
+            href="login.html"
+            class="font-semibold text-indigo-400 hover:text-indigo-300"
+            >Log in</a
+          >
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

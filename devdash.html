@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link
+      rel="shortcut icon"
+      href="Vexora_v1-removebg-preview.png"
+      type="image/x-icon"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vexora - Developer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+        signOut
+      } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc
+      } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAZFCHlYN1pxtgiL_awMCfTFgVrx84fBuY",
+        authDomain: "vexora-68fb7.firebaseapp.com",
+        projectId: "vexora-68fb7",
+        storageBucket: "vexora-68fb7.appspot.com",
+        messagingSenderId: "756975037451",
+        appId: "1:756975037451:web:04fbaca4f080c6fe3beb0e",
+        measurementId: "G-391LRTHN5Q",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const personalRevEl = document.getElementById("personalRevenue");
+        const teamRevEl = document.getElementById("teamRevenue");
+        const usernameEl = document.getElementById("username");
+        const signOutBtn = document.getElementById("signOutBtn");
+        const errorEl = document.getElementById("errorMsg");
+        const profilePicEl = document.getElementById("profilePic");
+
+        onAuthStateChanged(auth, async (user) => {
+          if (!user) {
+            // Not logged in, redirect to login page
+            window.location.href = "login.html";
+            return;
+          }
+
+          // Set profile picture based on email username (pic in root folder)
+          if (user.email && profilePicEl) {
+            const emailUsername = user.email.split("@")[0];
+            profilePicEl.src = `${emailUsername}.jpg`;
+            profilePicEl.onerror = () => {
+              profilePicEl.src = "default-profile.jpg";
+            };
+          }
+
+          try {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+              errorEl.textContent = "User data not found.";
+              return;
+            }
+
+            const userData = userSnap.data();
+            usernameEl.textContent = userData.name || "Developer";
+
+            personalRevEl.textContent =
+              "$" + (userData.personalRevenue ?? 0).toLocaleString();
+
+            if (userData.teamId) {
+              const teamRef = doc(db, "teams", userData.teamId);
+              const teamSnap = await getDoc(teamRef);
+
+              if (teamSnap.exists()) {
+                teamRevEl.textContent =
+                  "$" + (teamSnap.data().totalRevenue ?? 0).toLocaleString();
+              } else {
+                teamRevEl.textContent = "No team data found";
+              }
+            } else {
+              teamRevEl.textContent = "No team assigned";
+            }
+          } catch (e) {
+            errorEl.textContent = "Failed to fetch analytics.";
+            console.error(e);
+          }
+        });
+
+        signOutBtn.addEventListener("click", async () => {
+          await signOut(auth);
+          window.location.href = "login.html";
+        });
+      });
+    </script>
+
+    <style>
+      body {
+        background-color: #111827;
+      }
+    </style>
+  </head>
+  <body class="text-white">
+    <nav class="relative bg-gray-800">
+      <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+        <div class="relative flex h-16 items-center justify-between">
+          <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+            <div class="flex shrink-0 items-center">
+              <img
+                src="Vexora_v1-removebg-preview.png"
+                alt="Your Company"
+                class="h-8 w-auto"
+              />
+            </div>
+            <div class="hidden sm:ml-6 sm:block">
+              <div class="flex space-x-4">
+                <a
+                  href="devdash.html"
+                  aria-current="page"
+                  class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white"
+                  >Dashboard</a
+                >
+                <a
+                  href="team.html"
+                  class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                  >Team</a
+                >
+                <a
+                  href="projects.html"
+                  class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                  >Projects</a
+                >
+                <a
+                  href="calendar.html"
+                  class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                  >Calendar</a
+                >
+              </div>
+            </div>
+          </div>
+          <div
+            class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
+          >
+            <button
+              type="button"
+              class="relative rounded-full p-1 text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-500"
+            >
+              <span class="absolute -inset-1.5"></span>
+              <span class="sr-only">View notifications</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                data-slot="icon"
+                aria-hidden="true"
+                class="size-6"
+              >
+                <path
+                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+
+            <el-dropdown class="relative ml-3">
+              <button
+                class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              >
+                <span class="absolute -inset-1.5"></span>
+                <span class="sr-only">Open user menu</span>
+                <img
+                  id="profilePic"
+                  src="default-profile.jpg"
+                  alt="User profile"
+                  class="size-8 rounded-full bg-gray-800 outline -outline-offset-1 outline-white/10"
+                />
+              </button>
+            </el-dropdown>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-6 py-10">
+      <h1 class="text-3xl font-bold mb-8" id="username">Loading...</h1>
+
+      <section
+        class="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-300"
+        aria-label="Analytics"
+      >
+        <div
+          class="rounded-lg bg-gray-900 p-6 shadow-md flex flex-col justify-center items-center"
+        >
+          <h2 class="text-xl font-semibold mb-2">Personal Revenue</h2>
+          <p
+            class="text-4xl font-bold text-green-400"
+            id="personalRevenue"
+          >
+            Loading...
+          </p>
+        </div>
+
+        <div
+          class="rounded-lg bg-gray-900 p-6 shadow-md flex flex-col justify-center items-center"
+        >
+          <h2 class="text-xl font-semibold mb-2">Team Revenue</h2>
+          <p class="text-4xl font-bold text-blue-400" id="teamRevenue">
+            Loading...
+          </p>
+        </div>
+      </section>
+
+      <p class="mt-6 text-red-500 font-semibold" id="errorMsg"></p>
+    </main>
+  </body>
+</html>
+``

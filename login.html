@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vexora - Login</title>
+  <link rel="shortcut icon" href="Vexora_v1-removebg-preview.png" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZFCHlYN1pxtgiL_awMCfTFgVrx84fBuY",
+      authDomain: "vexora-68fb7.firebaseapp.com",
+      projectId: "vexora-68fb7",
+      storageBucket: "vexora-68fb7.appspot.com",
+      messagingSenderId: "756975037451",
+      appId: "1:756975037451:web:04fbaca4f080c6fe3beb0e",
+      measurementId: "G-391LRTHN5Q"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("login-form");
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const errorBox = document.getElementById("error-box");
+      const forgotLink = document.getElementById("forgot-password-link");
+
+      // Login logic
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorBox.textContent = "";
+        errorBox.style.color = "red";
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+          errorBox.textContent = "Please enter email and password.";
+          return;
+        }
+
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          // Check if "Dev" collection exists for this user
+          const devColRef = collection(db, "users", user.uid, "Dev");
+          const devSnapshot = await getDocs(devColRef);
+
+          if (!devSnapshot.empty) {
+            // Has Dev collection
+            window.location.href = "devdash.html";
+          } else {
+            // No Dev collection
+            window.location.href = "dash.html";
+          }
+
+        } catch (error) {
+          console.error(error);
+          if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+            errorBox.textContent = "Email or password is incorrect.";
+          } else {
+            errorBox.textContent = "Error: " + error.message;
+          }
+        }
+      });
+
+      // Forgot password logic
+      forgotLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        errorBox.textContent = "";
+        errorBox.style.color = "red";
+
+        const email = emailInput.value.trim();
+        if (!email) {
+          errorBox.textContent = "Please enter your email above to reset password.";
+          return;
+        }
+
+        try {
+          await sendPasswordResetEmail(auth, email);
+          errorBox.style.color = "green";
+          errorBox.textContent = "Password reset email sent! Check your inbox.";
+        } catch (error) {
+          console.error(error);
+          errorBox.textContent = "Failed to send reset email. Try again.";
+        }
+      });
+    });
+  </script>
+
+  <style>
+    body {
+      background-color: #111827;
+    }
+  </style>
+</head>
+<body>
+  <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+      <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
+        Sign in to your account
+      </h2>
+    </div>
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+      <form id="login-form" class="space-y-6" novalidate>
+        <div>
+          <label for="email" class="block text-sm/6 font-medium text-gray-100">Email address</label>
+          <div class="mt-2">
+            <input id="email" type="email" name="email" required autocomplete="email"
+              class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between">
+            <label for="password" class="block text-sm/6 font-medium text-gray-100">Password</label>
+            <div class="text-sm">
+              <a href="#" id="forgot-password-link" class="font-semibold text-indigo-400 hover:text-indigo-300">Forgot password?</a>
+            </div>
+          </div>
+          <div class="mt-2">
+            <input id="password" type="password" name="password" required autocomplete="current-password"
+              class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
+          </div>
+        </div>
+
+        <div>
+          <button type="submit"
+            class="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+            Sign in
+          </button>
+        </div>
+
+        <!-- Error or success message box -->
+        <p id="error-box" class="mt-2 text-center text-sm font-semibold" aria-live="polite"></p>
+      </form>
+
+      <p class="mt-10 text-center text-sm/6 text-gray-400">
+        Not a member?
+        <a href="signup.html" class="font-semibold text-indigo-400 hover:text-indigo-300">Register now</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
