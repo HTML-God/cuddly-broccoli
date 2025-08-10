@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Discord Linking</title>
+</head>
+<body>
+  <h1>Linking your Discord...</h1>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZFCHlYN1pxtgiL_awMCfTFgVrx84fBuY",
+      authDomain: "vexora-68fb7.firebaseapp.com",
+      projectId: "vexora-68fb7",
+      storageBucket: "vexora-68fb7.appspot.com",
+      messagingSenderId: "756975037451",
+      appId: "1:756975037451:web:04fbaca4f080c6fe3beb0e",
+      measurementId: "G-391LRTHN5Q",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const DISCORD_CLIENT_ID = "YOUR_DISCORD_CLIENT_ID";
+    const DISCORD_CLIENT_SECRET = "YOUR_DISCORD_CLIENT_SECRET";
+    const REDIRECT_URI = "https://yourwebsite.com/discord-callback.html";
+
+    async function linkDiscord(user) {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+
+      if (!code) {
+        alert("No code provided from Discord.");
+        return;
+      }
+
+      // 1. Exchange code for token
+      const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: DISCORD_CLIENT_ID,
+          client_secret: DISCORD_CLIENT_SECRET,
+          grant_type: "authorization_code",
+          code,
+          redirect_uri: REDIRECT_URI
+        })
+      });
+
+      const tokenData = await tokenRes.json();
+      const accessToken = tokenData.access_token;
+
+      if (!accessToken) {
+        alert("Failed to get Discord access token.");
+        return;
+      }
+
+      // 2. Get user info
+      const userRes = await fetch("https://discord.com/api/users/@me", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const discordUser = await userRes.json();
+
+      // 3. Save to Firestore
+      await updateDoc(doc(db, "users", user.uid), {
+        discordLinked: true,
+        discordId: discordUser.id,
+        discordUsername: `${discordUser.username}#${discordUser.discriminator}`
+      });
+
+      window.location.href = "shop.html";
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      linkDiscord(user);
+    });
+  </script>
+</body>
+</html>
