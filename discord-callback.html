@@ -1,0 +1,36 @@
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-functions.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+  const firebaseConfig = {
+  apiKey: "AIzaSyAZFCHlYN1pxtgiL_awMCfTFgVrx84fBuY",
+  authDomain: "vexora-68fb7.firebaseapp.com",
+  projectId: "vexora-68fb7",
+  storageBucket: "vexora-68fb7.firebasestorage.app",
+  messagingSenderId: "756975037451",
+  appId: "1:756975037451:web:04fbaca4f080c6fe3beb0e",
+  measurementId: "G-391LRTHN5Q"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const functions = getFunctions(app);
+  const auth = getAuth(app);
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user && code) {
+      try {
+        const linkDiscordFn = httpsCallable(functions, "linkDiscord");
+        const result = await linkDiscordFn({ code });
+        console.log("Linked Discord:", result.data);
+        window.location.href = "/shop.html"; // Redirect after success
+      } catch (err) {
+        console.error(err);
+        alert("Failed to link Discord. Please try again.");
+      }
+    }
+  });
+</script>
